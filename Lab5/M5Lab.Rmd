@@ -1,0 +1,95 @@
+---
+title: "Module 5 Lab"
+output: pdf_document
+---
+
+In this lab you will learn to use the R functions \verb|t.test()|, \verb|prop.test()|, and \verb|binom.test()|, and understand their output. In the final section we will review technical summaries a bit more.
+
+# Student's t-Test
+
+The function `t.test()` performs a one or two sample t-test. Here we will use it for a one sample test, and learn how to get other useful information from the function. Remember, for more information type `?t.test`.
+
+First we will generate some data to work with. To make sure we have the same data, the first line of code below will set the "seed" for our random number generator. This is so that we have the same "random" numbers, and thus get the same results (use `?set.seed()` for details). I chose 1908 as our seed because that was the year William Gosset invented the t-test!
+
+```{r}
+set.seed(1908) # William Gosset invents t-test
+x <- rnorm(40, 5, 5) # Generate 40 N(5,5) random numbers
+x # show those numbers
+```
+
+The first line of code sets the seed for random number generation, and the second line generates 40 Normal random numbers with a mean of five, and standard deviation of five. Did you get the same "random" sample? 
+
+Before we perform a one sample t-test, we have to establish what we are testing. How about we see whether `t.test()` can tell about the evidence in the sample that we chose a population mean that is not equal to three. Then our null and alternative hypotheses, in statistical notation, are: 
+$$H_{0}: \mu = 3$$
+$$H_{A}: \mu \neq 3 $$
+To perform the test on our dataset, run the following line of code.
+```{r, eval=FALSE}
+t.test(x, mu = 3, conf.level = 0.95)
+```
+The first argument, `x`, is our data. The second argument, `mu = 3`, declares the null hypothesized value for $\mu$; in this case: $H_{0}: \mu = 3$. The function `t.test()` also returns a t-based confidence interval for the mean. Therefore, we use the third argument, `conf.level = 0.95`, to specify that we want a 95\% confidence interval for the mean. 
+
+```{r, echo=FALSE}
+t.test(x, mu = 3, conf.level = 0.95)
+```
+
+The first line of output reminds you of the data used, in case you have forgotten! The second line gives the value of the test statistic, the degrees of freedom, and the p-value. How would the p-value change if the test were one-sided? The next line states the alternative hypothesis in plain english. The next two lines give the two sided 95\% confidence interval. Finally, `t.test` returns a point estimate for $\mu$.
+
+# A Test of Proportions - Normal Approximation to Binomial
+
+Now we will perform a test about a proportion. Suppose a gambler purchases a pair of dice made for cheating. Each die is designed to roll a six one out of every four rolls (instead of one out of six). He rolls one die 100 times to test it, and gets 20 sixes.  We want to know, is the die working as it is designed to? We test the null hypothesis that the true proportion of rolls that result in six is 0.25, and the alternative that the rate is different from 0.25. 
+$$H_{0}: p = 0.25$$
+$$H_{A}: p \neq 0.25 $$
+Since we have a sample size of 100 rolls, the Central Limit Theorem assures us that a test relying on a Normal approximation to the Binomial will perform well. The function we will use to perform the test is `prop.test()`. 
+```{r}
+prop.test(20, 100, p = 0.25, conf.level = 0.95, correct = FALSE)
+```
+
+The line of code and the output follow a similar format to `t.test()` in the first section. The `20` and `100` specify the number of "successes" and "trials", respectively. The `p = 0.25` argument declares the null hypothesized proportion. The next two arguments have the same interpretation as in `t.test()`.
+
+The first line of output gives the test conducted, and whether a continuity correction was made. The second line gives the data supplied to the function: "successes," "trials," and the null hypothesized proportion. The third line gives the value of the test statistic ($\chi^{2} = 1.08$), the degrees of freedom, and the p-value. Note that the test statistic, $\chi^{2} = 1.08$, is the square of the z-statistic. The next line reiterates the alternative hypothesis specified. Following that is a 95\% confidence interval, and finally a point estimate for the unknown proportion. 
+
+See Module 5, Lecture 2, or run `?prop.test`, for more information about the function.
+
+```{r, eval=FALSE, echo=FALSE}
+p.hat <- .2 # sample mean
+p0 <- 0.25 # Null hypothesis
+Z <- (p.hat - p0)/sqrt(p0*(1-p0)/100) # test statistic
+X2 <- Z^2
+pnorm(Z, 0, 1)
+
+.2 + c(-1,1)*qnorm(.975)*sqrt(p.hat*(1-p.hat)/100)
+```
+
+# A Test of Proportions - Exact Binomial
+
+The gambler is a little suspicious, so decides to test the other die. He is running out of patience though, so decides to roll the second die only 20 times, and rolls 3 sixes. Can we reject the null hypothesis that the true proportion of sixes for this die is 0.25, in favor of the alternative that the proportion not 0.25?
+
+$$H_{0}: p = 0.25$$
+$$H_{A}: p \neq 0.25 $$
+
+This time we have may fewer rolls (Binomial trials) to base our decision on, so an exact Binomial test is better than the Normal approximation. This is because the Central Limit Theorem does not guarantee the sample mean will be approximately Normal with such a small sample size. Notice this time I stored the output in the varible "b"; storing test results in this way can sometimes be useful. 
+```{r}
+b <- binom.test(3, 20, p = 0.25, conf.level = 0.95)
+b
+```
+The output tells a story. The gambler rolled three sixes out of 20 rolls, but this is not unlikely if the cheat die is performing as it should. In fact, the probability a player will have a result this extreme, or more extreme, in 20 rolls is 0.4394. We estimate the true proportion of sixes is 0.15, but we are 95\% confident that the proportion of sixes is between 0.032 and 0.344, which contains the die's target proportion. Based on the p-value and the confidence interval, we would fail to reject the null hypothesis that the die is performing as it is designed to.
+
+```{r, eval=FALSE, echo=FALSE}
+mean(x) + qt(0.95, df = 39)*(sd(x)/sqrt(40)) # One sided upper CI
+```
+
+# Technical Summary Examples
+
+Here is an example technical summary of the exact Binomial test of proportion. 
+
+\begin{itemize}
+\item The die came up six 3 times in 20 games. We fail to reject the null hypothesis that the true proportion of sixes is 0.25, based on an exact Binomial test p-value of 0.4394. We estimate the true proportion of sixes is 0.15, with a 95\% confidence interval of (0.032, 0.379).
+\end{itemize}
+
+As mentioned in Module 4 lab, there are many ways to incorrectly write a technical summary. Below are a few examples of **incorrect** summary statements.
+\begin{itemize}
+\item We estimate the true roportion is 0.15, and thus reject the null hypothesis that the true proportion of sixes is 0.25.
+\item Based on a p-value of 0.4394, we conclude the true proportion of rolls that is six is 0.25.
+\item Based on the p-value, the probability is 0.4394 that the true proportion of rolls that result in six is 0.25.
+\end{itemize}
+
